@@ -1,0 +1,6 @@
+It appears that there exists a cue for GlobalShortageData, and this cue collates data regarding production and consumption of wares for the faction.
+It also appears that there exists a cue for the shortage repsonse called EvaluateShortages
+
+There are cues for requesting freighters, called Request_Commandeerable_Freighter, Request_Freighter, and RequestProductionFreighter.
+
+Essentially the addition of trade routes, which are basically tables of data, requires only an alterations to GlobalShortageData cue, to allow for the calculation of production rate and consumption rate. Then, EvaluateShortages needs to be modified to consider the shortage in light of the existing trade routes. Finally, the freighter request cues need to take into account the simpler order and the existing routes when freighters are assigned.

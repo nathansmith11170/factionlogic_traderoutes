@@ -1,0 +1,111 @@
+A way to efficiently look up routes by sector will be necessary. To facilitate, three master tables will be maintained:
+    The first table will have sectorA as keys. Full table structure:
+        table[ {SectorA} = 
+            table[ {SectorB} = 
+                table[
+                        {'UniqueID'} = an integer,
+                        {'SectorA'} = a sector,
+                        {'SectorB'} = a sector,
+                        {'WareMovedFromBToA'} = a ware,
+                        {'AmountMovedFromBToA'} = an integer
+                    ]
+                ]
+            ]
+
+    The second table will have sectorB as keys. Full table structure.
+        table[ {SectorB} = 
+            table[ {SectorA} = 
+                table[
+                        {'UniqueID'} = an integer,
+                        {'SectorA'} = a sector,
+                        {'SectorB'} = a sector,
+                        {'WareMovedFromAToB'} = a ware,
+                        {'AmountMovedFromBToA'} = an integer
+                    ]
+                ]
+            ]
+
+        Two tables above are necessary to efficiently look up a route using SectorA or SectorB
+
+    The third table is a master table with UniqueID as key, structured as follows:
+        table[ {UniqueID} = 
+            table[
+                {'SectorA'} = a sector,
+                {'SectorB'} = a sector,
+                {'WareMovedFromAToB'} = a ware,
+                {'AmountMovedFromAToB'} = an integer,
+                {'WareMovedFromBToA'} = a ware,
+                {'AmountMovedFromAToB'} = an integer
+            ]
+        ]
+
+Faction behaviors will be as follows:
+
+    For sectors which consume wares, supply is needed. If there are existing trade routes, they are evaluated. Otherwise, the faction will begin looking for a producer.
+
+    To manage freight, a fleet of freighters is needed. The faction maintains a table of its freighters with the ship as key and 
+
+    Find_Producer
+        First, the faction will check their own sectors. If any one of their own sectors is producing the needed ware, then a trade route is established between that sector and the consumer for as much as possible.
+            NOTE: If the wares in the supplier sector are already committed in a route, but the destination is for a foreign faction, then that route is scheduled for cancellation and the wares are instead allocated to the sector owner's trade route, which begins immediately. This cancellation signal causes freighters on the route to cease purchasing and to try delivering their cargo before they run idle subroutine (go into nearest owned station's internal storage).
+        If there remains more unfulfilled demand they continue searching for a supplier until the demand is fulfilled or they run out of available sectors within their own territory.
+        If there are no more owned sectors producing the needed ware, then the search is expanded to include sectors owned by anyone who has neutral or better relations with the faction, either reaching a maximum of two gate jumps from the nearest owned sector or fulfilling the demand.
+
+    Evaluate_Route
+        This routine exists to evaluate a route and determine if the traders assigned to it are insufficient or superfluous. 
+        The stations in the destination sector which are purchasing the ware on the route are checked to see if they are experiencing short supply or overflow.
+        If there is short supply, then an additional trader is added to the route. If there is overflow, then a trader is removed from the route.
+
+    Create_route
+
+
+Each trade route needs to have the following information:
+    Ware in transport for each direction (only one ware can go each way for simplicity)
+    Traders on the route
+    Distance of the route
+    Sector identifiers of each endpoint
+
+The traders on the route is needed to determine the theoretical maximum rate of ware volume that can be transported over the route
+The distance of the route is also needed for that calculation
+The sector identifiers are used to relate the trade route to the sector information that is returned from the shortage data
+
+Factionlogic currently generates reports for a faction which contain the following tables of information:
+    InsufficientWaresReport -> A table of wares needed for production which have currently insufficient supply
+    ShortageReport -> A table of wares that are in short supply
+    OverflowReport -> A table of wares produced that are currently at max storage capacity
+    BuyOffers -> A table of buy offers
+    SellOffers -> a table of sell offers
+    WorkforceReports -> A table of reports relating to workforce shortages
+    InsufficientBuildWares -> A table of reports indicating shortages of station module construction wares
+
+Additionally, it is probably necessary for a faction to have two more tables for each sector:
+    ProductionRateReport -> A table that indicates the rate of production given there are no modules which stop operation
+    ConsumptionRateReport -> A table that indicates the rate of consumption given there are no modules with stop operation
+
+The reason these 'perfect world' tables are needed is that they provide a metric which the algorithm can use to assess its performance. If there should be enough wares produced to supply consumption, then the trade routes need to be reassessed. If the wares produced are theoretically insufficient, then they will certainly be insufficient in reality and production should scale.
+
+Trade routes are reassessed as follows:
+    If there are shortages or insufficient wares, determine if the production rate is sufficient compared to consumption rate
+    If the production rate should be sufficient, try to commandeer/build another freighter and assign it to this route, but only assign up to 30% more transport capacity than the theoretical requirement for production. If production rate is below consumption rate, try to build habitation modules at the producer stations to make production more effective, or build more production modules if there is space available in the source sector to do so (sectors can only have so many AI production modules).
+    If nothing can be done for this route's shortages, signal for another trade route to be set up to supply the demand.
+
+    If there are overflows on either endpoint, check if any traders on the route are idling.
+    If they are, free them from the factionlogic commandeering
+
+Trade routes are created whenever the following conditions are met:
+    A ware is required for production in a sector, and current supply of those wares is insifficient.
+    These wares are produced in another sector and that production is not currently claimed for use in another trade route.
+    There is no existing trade route between these sectors for that ware.
+
+When a route is created, the number of traders that are requested for that route is calculated as follows:
+    Given
+        The transport factor of L, M, and S freighters of the faction, with the units of (m*m*m*m)/hr
+            This transport factor is cargo capacity in m*m*m by travel drive top speed in m/hr
+        and the distance between the center of Sector A and the center of Sector B
+        and the volume of wares that need to be transported per hour, either from A to B or from B to A, whichever is the larger volume
+            That is to say, the volume of the wares consumed which are on the route in question
+    then
+        The distance is multiplied by the volume required to get an amount of the units (m*m*m*m)/hr
+        The sum of transport factors that reach a number that is equal to or large than the above result indicates the number of trade ships required.
+
+    This number of freighters serves as an initial estimate which is corrected over time by the reassessments

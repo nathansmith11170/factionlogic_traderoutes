@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<content id="fationlogic_traderoutes" name="Faction Trade Routes" description="Replaces auto trader and middleman jobs with trade routes in faction logic." author="General Vash" version="001" date="2022-06-08" save="1" enabled="1">
+	<dependency id="ego_dlc_split" optional="false" name="Split Vendetta" />
+	<dependency id="ego_dlc_terran" optional="false" name="Cradle of Humanity" />
+	<dependency id="ego_dlc_pirate" optional="false" name="Tides of Avarice"/>
+	<text language="7" 	name="Faction Trade Routes" description="Replaces auto trader and middleman jobs with trade routes in faction logic." author="General Vash" />
+	<text language="33" name="Faction Trade Routes" description="Replaces auto trader and middleman jobs with trade routes in faction logic." author="General Vash" />
+	<text language="34" name="Faction Trade Routes" description="Replaces auto trader and middleman jobs with trade routes in faction logic." author="General Vash" />
+	<text language="39" name="Faction Trade Routes" description="Replaces auto trader and middleman jobs with trade routes in faction logic." author="General Vash" />
+	<text language="44" name="Faction Trade Routes" description="Replaces auto trader and middleman jobs with trade routes in faction logic." author="General Vash" />
+	<text language="45" name="Faction Trade Routes" description="Replaces auto trader and middleman jobs with trade routes in faction logic." author="General Vash" />
+	<text language="49" name="Faction Trade Routes" description="Replaces auto trader and middleman jobs with trade routes in faction logic." author="General Vash" />
+	<text language="81" name="Faction Trade Routes" description="Replaces auto trader and middleman jobs with trade routes in faction logic." author="General Vash" />
+	<text language="82" name="Faction Trade Routes" description="Replaces auto trader and middleman jobs with trade routes in faction logic." author="General Vash" />
+	<text language="86" name="Faction Trade Routes" description="Replaces auto trader and middleman jobs with trade routes in faction logic." author="General Vash" />
+	<text language="88" name="Faction Trade Routes" description="Replaces auto trader and middleman jobs with trade routes in faction logic." author="General Vash" />
+</content>

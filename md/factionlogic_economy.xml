@@ -1,0 +1,197 @@
+<?xml version='1.0' encoding='utf-8'?>
+<diff>
+  <add sel="/mdscript/cues/cue[@name='GlobalStorageData']/actions">
+    <set_value name="$NextProductionConsumptionDelay" min="30s" max="120s"/>
+  </add>
+  <add sel="/mdscript/cues/cue[@name='GlobalStorageData']/actions">
+    <!-- 
+          The top-most table has faction as key and a table as value. 
+            The table in the above value has sector as key and a table as value. 
+              The table in the above value has ware as key and production or consumption rate in wares/hour as value.
+        -->
+  </add>
+  <add sel="/mdscript/cues/cue[@name='GlobalStorageData']/actions">
+    <set_value name="$ProductionTables" exact="table[]"/>
+  </add>
+  <add sel="/mdscript/cues/cue[@name='GlobalStorageData']/actions">
+    <set_value name="$ConsumptionTables" exact="table[]"/>
+  </add>
+  <add sel="/mdscript/cues/cue[@name='GlobalStorageData']/cues/comment()[1]" pos="before">
+    <cue name="GenerateProductionConsumptionData_Ticker">
+      <delay exact="$NextProductionConsumptionDelay"/>
+      <actions>
+        <do_if value="GenerateProductionConsumptionData.state == cuestate.waiting">
+          <signal_cue cue="GenerateProductionConsumptionData"/>
+        </do_if>
+        <set_value name="$NextProductionConsumptionDelay" min="15min" max="20min"/>
+        <reset_cue cue="GenerateProductionConsumptionData_Ticker"/>
+      </actions>
+    </cue>
+  </add>
+  <add sel="/mdscript/cues/cue[@name='GlobalStorageData']/cues/comment()[1]" pos="before">
+    <cue name="GenerateProductionConsumptionData" namespace="this">
+      <conditions>
+        <event_cue_signalled/>
+      </conditions>
+      <actions>
+        <set_value name="$DebugChance" exact="100"/>
+        <debug_to_file chance="$DebugChance" directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Beginning production and consumption table generation.'"/>
+        <set_value name="$Objects" exact="[]"/>
+        <set_value name="$Faction" exact="if @event.param.count ge 1 then event.param.{1} else null"/>
+        <set_value name="$FactionTable" exact="null"/>
+        <do_if value="$Faction">
+          <debug_to_file chance="$DebugChance" directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Table generation for %s'.[$Faction.knownname]"/>
+          <!--Report for faction. Only clear that faction's entries in production and consumption tables -->
+          <set_value name="$FactionProductionTable" exact="@GlobalStorageData.$ProductionTables.{$Faction}"/>
+          <set_value name="$FactionConsumptionTable" exact="@GlobalStorageData.$ConsumptionTables.{$Faction}"/>
+          <do_if value="not $FactionProductionTable">
+            <set_value name="$FactionProductionTable" exact="table[]"/>
+            <set_value name="GlobalStorageData.$ProductionTables.{$Faction}" exact="$FactionProductionTable"/>
+          </do_if>
+          <do_if value="not $FactionConsumptionTable">
+            <set_value name="$FactionConsumptionTable" exact="table[]"/>
+            <set_value name="GlobalStorageData.$ConsumptionTables.{$Faction}" exact="$FactionConsumptionTable"/>
+          </do_if>
+          <!-- find sectors owned by faction -->
+          <find_sector name="$Objects" owner="$Faction" space="player.galaxy" multiple="true"/>
+        </do_if>
+        <do_else>
+          <debug_to_file chance="$DebugChance" directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Global table generation.'"/>
+          <!--Global report. Clear all-->
+          <set_value name="GlobalStorageData.$ProductionTables" exact="table[]"/>
+          <do_if value="@global.$FactionManagers">
+            <set_value name="$Factions" exact="global.$FactionManagers.keys.list"/>
+            <do_all exact="$Factions.count" counter="$f">
+              <!-- find all sectors -->
+              <find_sector name="$Objects" owner="$Factions.{$f}" space="player.galaxy" multiple="true" append="true"/>
+            </do_all>
+            <remove_value name="$Factions"/>
+          </do_if>
+        </do_else>
+      </actions>
+      <cues>
+        <cue name="ProcessSectors" instantiate="true" checkinterval="100ms">
+          <actions>
+            <debug_to_file chance="0" directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Running ProcessSectors with %s remaining'.[$Objects.count]"/>
+            <!-- Let's do one sector at a time, since the other data generates 15 stations at a time this should be approximately the same load -->
+            <set_value name="$NumToProcess" exact="1"/>
+            <set_value name="$SectorCounter" exact="0"/>
+            <do_all exact="$Objects.count" counter="$i" reverse="true">
+              <set_value name="$Sector" exact="$Objects.{$i}"/>
+              <debug_to_file chance="0" directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Processing %s'.[$Sector.knownname]"/>
+              <!-- Get stations in sector -->
+              <find_station_by_true_owner name="$Stations" faction="$Sector.owner" space="$Sector" multiple="true"/>
+              <debug_to_file chance="0" directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'%s stations in sector'.[$Stations.count]"/>
+              <!-- Get operational production modules for each station -->
+              <!-- Get theoretical production and consumption rates on the modules, add to tables with ware as key, rates as value -->
+              <set_value name="$ProductionRateTable" exact="table[]"/>
+              <set_value name="$ConsumptionRateTable" exact="table[]"/>
+              <do_for_each name="$Station" in="$Stations">
+                <debug_to_file chance="0" directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Processing station %s'.[$Station.knownname]"/>
+                <do_for_each name="$ProductionModule" in="$Station.productions">
+                  <do_if value="$ProductionModule.isoperational">
+                    <debug_to_file chance="0" directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'\tProcessing module %s'.[$ProductionModule.knownname]"/>
+                    <!-- The amount calculation for products assumes single product production modules -->
+                    <do_for_each name="$Product" in="$ProductionModule.products.list">
+                      <set_value name="$ProductionVolumePerHour" exact="$ProductionModule.macro.productionvolume"/>
+                      <set_value name="$ProductWareVolume" exact="$Product.volume"/>
+                      <set_value name="$ProductionAmountPerHour" exact="$ProductionVolumePerHour / $ProductWareVolume"/>
+                      <debug_to_file chance="0" directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'\t\tThis module produces %s of %s per hour'.[$ProductionAmountPerHour, $Product.name]"/>
+                      <do_if value="@$ProductionRateTable.{$Product}">
+                        <set_value name="$ProductionRateTable.{$Product}" exact="$ProductionAmountPerHour" operation="add"/>
+                      </do_if>
+                      <do_else>
+                        <set_value name="$ProductionRateTable.{$Product}" exact="$ProductionAmountPerHour"/>
+                      </do_else>
+                      <set_value name="$ResourcesAmountTable" exact="$Product.raceresources.{$Station.trueowner.primaryrace}.table"/>
+                      <set_value name="$ResourceSum" exact="0"/>
+                      <do_all counter="$j" exact="$ResourcesAmountTable.keys.count">
+                        <set_value name="$ResourceSum" exact="$ResourcesAmountTable.{$ResourcesAmountTable.keys.{$j}}" operation="add"/>
+                      </do_all>
+                      <set_value name="$ConsumptionVolumePerHour" exact="$ProductionModule.macro.consumptionvolume"/>
+                      <do_all counter="$j" exact="$ResourcesAmountTable.keys.count">
+                        <set_value name="$WareRatio" exact="($ResourcesAmountTable.{$ResourcesAmountTable.keys.{$j}})f / ($ResourceSum)f"/>
+                        <set_value name="$WareVolumeConsumedPerHour" exact="($ConsumptionVolumePerHour * $WareRatio)L"/>
+                        <set_value name="$WareAmountConsumedPerHour" exact="$WareVolumeConsumedPerHour / $ResourcesAmountTable.keys.{$j}.volume"/>
+                        <debug_to_file chance="0" directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'\t\tThis module consumes %s of %s per hour'.[$WareAmountConsumedPerHour, $ResourcesAmountTable.keys.{$j}.name]"/>
+                        <do_if value="@$ConsumptionRateTable.{$ResourcesAmountTable.keys.{$j}}">
+                          <set_value name="$ConsumptionRateTable.{$ResourcesAmountTable.keys.{$j}}" exact="$WareAmountConsumedPerHour" operation="add"/>
+                        </do_if>
+                        <do_else>
+                          <set_value name="$ConsumptionRateTable.{$ResourcesAmountTable.keys.{$j}}" exact="$WareAmountConsumedPerHour"/>
+                        </do_else>
+                      </do_all>
+                    </do_for_each>
+                  </do_if>
+                </do_for_each>
+              </do_for_each>
+              <!-- Update value of table with faction as key of top-most, sector as key of first nested table, and ware as the key of innermost nested table -->
+              <do_if value="GlobalStorageData.$ProductionTables.keys.list.indexof.{$Sector.trueowner} ==0">
+                <set_value name="GlobalStorageData.$ProductionTables.{$Sector.trueowner}" exact="table[]"/>
+              </do_if>
+              <set_value name="GlobalStorageData.$ProductionTables.{$Sector.trueowner}.{$Sector}" exact="$ProductionRateTable"/>
+              <do_if value="GlobalStorageData.$ConsumptionTables.keys.list.indexof.{$Sector.trueowner} == 0">
+                <set_value name="GlobalStorageData.$ConsumptionTables.{$Sector.trueowner}" exact="table[]"/>
+              </do_if>
+              <set_value name="GlobalStorageData.$ConsumptionTables.{$Sector.trueowner}.{$Sector}" exact="$ConsumptionRateTable"/>
+              <debug_to_file chance="0" directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Sector owned by %s, sectors processed so far: %s'.[$Sector.trueowner, GlobalStorageData.$ConsumptionTables.{$Sector.trueowner}.keys.count]"/>
+              <remove_from_list name="$Objects" exact="$Sector"/>
+              <set_value name="$SectorCounter" exact="1" operation="add"/>
+              <do_if value="$SectorCounter ge $NumToProcess">
+                <break/>
+              </do_if>
+            </do_all>
+            <do_if value="$Objects.count == 0">
+              <do_if value="$DebugChance == 100">
+                <do_if value="$Faction">
+                  <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Production Tables for %s'.[$Faction.knownname]"/>
+                  <do_for_each name="$Sector" in="GlobalStorageData.$ProductionTables.{$Faction}.keys.list">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'\tSector %s:'.[$Sector.knownname]"/>
+                    <do_for_each name="$Ware" in="GlobalStorageData.$ProductionTables.{$Faction}.{$Sector}.keys.list">
+                      <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'\t\tWare: %s\tAmount: %s'.[$Ware.name, GlobalStorageData.$ProductionTables.{$Faction}.{$Sector}.{$Ware}]"/>
+                    </do_for_each>
+                  </do_for_each>
+                  <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Consumption Tables for %s'.[$Faction.knownname]"/>
+                  <do_for_each name="$Sector" in="GlobalStorageData.$ConsumptionTables.{$Faction}.keys.list">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'\tSector %s:'.[$Sector.knownname]"/>
+                    <do_for_each name="$Ware" in="GlobalStorageData.$ConsumptionTables.{$Faction}.{$Sector}.keys.list">
+                      <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'\t\tWare: %s\tAmount: %s'.[$Ware.name, GlobalStorageData.$ConsumptionTables.{$Faction}.{$Sector}.{$Ware}]"/>
+                    </do_for_each>
+                  </do_for_each>
+                </do_if>
+                <do_else>
+                  <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Done generating production reports for ' + GlobalStorageData.$ProductionTables.keys.count + ' factions'"/>
+                  <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Done generating consumption reports for ' + GlobalStorageData.$ConsumptionTables.keys.count + ' factions'"/>
+                  <do_for_each name="$Faction" in="GlobalStorageData.$ProductionTables.keys.list">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Production Tables for %s'.[$Faction.knownname]"/>
+                    <do_for_each name="$Sector" in="GlobalStorageData.$ProductionTables.{$Faction}.keys.list">
+                      <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'\tSector %s:'.[$Sector.knownname]"/>
+                      <do_for_each name="$Ware" in="GlobalStorageData.$ProductionTables.{$Faction}.{$Sector}.keys.list">
+                        <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'\t\tWare: %s\tAmount: %s'.[$Ware.name, GlobalStorageData.$ProductionTables.{$Faction}.{$Sector}.{$Ware}]"/>
+                      </do_for_each>
+                    </do_for_each>
+                  </do_for_each>
+                  <do_for_each name="$Faction" in="GlobalStorageData.$ConsumptionTables.keys.list">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Consumption Tables for %s'.[$Faction.knownname]"/>
+                    <do_for_each name="$Sector" in="GlobalStorageData.$ConsumptionTables.{$Faction}.keys.list">
+                      <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'\tSector %s:'.[$Sector.knownname]"/>
+                      <do_for_each name="$Ware" in="GlobalStorageData.$ConsumptionTables.{$Faction}.{$Sector}.keys.list">
+                        <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'\t\tWare: %s\tAmount: %s'.[$Ware.name, GlobalStorageData.$ConsumptionTables.{$Faction}.{$Sector}.{$Ware}]"/>
+                      </do_for_each>
+                    </do_for_each>
+                  </do_for_each>
+                </do_else>
+              </do_if>
+              <signal_cue cue="ProductionConsumptionDataGenerated" check="false"/>
+              <reset_cue cue="GenerateProductionConsumptionData"/>
+            </do_if>
+          </actions>
+        </cue>
+      </cues>
+    </cue>
+  </add>
+  <add sel="/mdscript/cues/cue[@name='GlobalStorageData']/cues/comment()[1]" pos="before">
+    <cue name="ProductionConsumptionDataGenerated"/>
+  </add>
+  <replace sel="/mdscript/cues/cue[@name='GlobalStorageData']/cues/cue[@name='GenerateShortageData']/actions/set_value[@name='$DebugChance']/@exact">100</replace>
+</diff>

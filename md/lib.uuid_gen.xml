@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mdscript name="LIB_uuid_gen" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
+    <cues>
+        <!-- Generate RFC4122 compliant UUID -->
+        <library name="GenerateUUID" purpose="run_actions">
+            <actions>
+                <set_value name="$HexDigits" exact="['1', '0', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F']"/>
+                <set_value name="$HedDigitsEndingIn01" exact="['0', '5', '9', 'D']"/>
+                <set_value name="$Result" exact="[]"/>
+
+                <!-- Set random digits -->
+                <do_all counter="$i" exact="36">
+                    <append_to_list name="$Result" exact="$HexDigits.random"/>
+                </do_all>
+
+                <set_value name="$Result.{15}" exact="'4'"/> <!-- Set bits in positions 12-15 of time_hi_and_version to 0100 for version 4 UUID -->
+                <set_value name="$Result.{20}" exact="$HedDigitsEndingIn01.random"/> <!-- set bits in position 6 and 7 of clock_seq_hi_and_reserved to 0 and 1 respectively -->
+
+                <!-- Set Hyphens -->
+                <set_value name="$Result.{9}" exact="'-'"/>
+                <set_value name="$Result.{14}" exact="'-'"/>
+                <set_value name="$Result.{19}" exact="'-'"/>
+                <set_value name="$Result.{24}" exact="'-'"/>
+
+                <return value="'%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36'.$Result"/>
+            </actions>
+        </library>
+    </cues>
+</mdscript>
