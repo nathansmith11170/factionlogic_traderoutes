@@ -21,7 +21,7 @@ The factionlogic will determine which routes are necessary to supply demand in a
 
 Freighter behavior while on a route is basically: buy ware in SectorB, sell ware in SectorA, buy ware in SectorA, sell ware in SectorB, on repeat. The wares which are bought and sold depend on the routes which exist between stops, but freighters will try not to travel a route with an empty hold.
 
-Freighters for trade routes which have no assigned route will find nearest owner station and enter internal storage to await reassignment.
+Freighters which no longer have an assigned route will find nearest owner station and enter internal storage to await reassignment.
 
 Factionlogic will only attempt to purchase wares from other factions in the following scenario:
 <blockquote>
