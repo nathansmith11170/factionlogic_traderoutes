@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<mdscript name="LIB_trade_routes" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
+<mdscript name="LIB_trade_routes"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
     <cues>
         <cue name="GlobalTradeRouteTables">
             <actions>
@@ -8,24 +9,40 @@
                     The master table with UUID as key, structured as follows:
                     table[ {$UUID} = 
                         table[
-                            {$'SectorA'} = a sector,
-                            {$'SectorB'} = a sector,
-                            {$'WareMovedFromAToB'} = a ware,
-                            {$'AmountMovedFromAToB'} = an integer,
-                            {$'WareMovedFromBToA'} = a ware,
-                            {$'AmountMovedFromAToB'} = an integer
+                            {$'BuyerSector'} = a sector,
+                            {$'SupplierSector'} = a sector,
+                            {$'ContractedWare'} = a ware,
+                            {$'ContractedAmount'} = an integer,
                         ]
                     ]
                 -->
                 <set_value name="$MasterTable" exact="table[]"/>
 
                 <!--
-                This table will sector as key, for more efficient lookup of routes. Full table structure:
-                table[ {Sector} = 
-                    table[ {Ware} = 'UUID Of Route That Moves Given Ware' ]
+                    The following table exists to facilitate the searching of routes by sector
+                    Its contents are all the routes which are supplying the buyer in the key
+
+                    table[ {$BuyerSector} = table[
+                            {$SupplierSector} = table[
+                                {$Ware} = UUID of route for ware between sectors
+                            ]
+                        ]
                     ]
                 -->
-                <set_value name="$TradeRouteLookupBySectorAndWare" exact="table[]"/>
+                <set_value name="$TradeRouteLookupTableByBuyerSector" exact="table[]"/>
+
+                <!--
+                    The following table exists to facilitate the searching of routes by sector
+                    Its contents are all the routes which are buying from the supplier in the key
+
+                    table[ {$SupplierSector} = table[
+                            {$BuyerSector} = table[
+                                {$Ware} = UUID of route for ware between sectors
+                            ]
+                        ]
+                    ]
+                -->
+                <set_value name="$TradeRouteLookupTableBySupplierSector" exact="table[]"/>
 
             </actions>
             <cues>
@@ -33,54 +50,49 @@
                 <!-- add a route to the tables -->
                 <library name="AddRoute" purpose="run_actions">
                     <params>
-                        <param name="SectorA" comment="for one-way trade routes, this is usually the buyer"/>
-                        <param name="SectorB" />
-                        <param name="WareMovedFromAToB" comment="for one-way trade routes, this value will be null"/>
-                        <param name="AmountMovedFromAToB" comment="for one-way trade routes, this value will be 0"/>
-                        <param name="WareMovedFromBToA" />
-                        <param name="AmountMovedFromBToA" />
+                        <param name="BuyerSector"/>
+                        <param name="SupplierSector" />
+                        <param name="ContractedWare" />
+                        <param name="ContractedAmount" />
                     </params>
                     <actions>
                         <!--
                             Check contraint:
-                            Any sector can only have one UUID for any unique ware and trade partner combination
+                            Any sector can only have one UUID for any unique ware and supplier combination
                             Log error and do not alter tables if constraint is violated
                         -->
-                        <do_if value="@GlobalTradeRouteTables.$TradeRouteLookupBySectorAndWare.{ $SectorA }.{ $WareMovedFromAToB } or @GlobalTradeRouteTables.$TradeRouteLookupBySectorAndWare.{ $SectorA }.{ $WareMovedFromBToA }">
-                            <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Violated uniqueness constraint for route between %s and %s carrying %s or %s'.[$SectorA.knownname, $SectorB.knownname, $WareMovedFromAToB.name, $WareMovedFromBToA.name]"/>
-                            <return></return>
+                        <do_if value="@GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{ $BuyerSector }.{ $ContractedWare }">
+                            <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Violated uniqueness constraint for route between Buyer: %s and Supplier: %s carrying Ware: %s'.[$BuyerSector.knownname, $SupplierSector.knownname, $ContractedWare.name]"/>
+                            <return/>
                         </do_if>
 
                         <!--
-                            Add up to four entries to $TradeRouteLookupBySectorAndWare-one for each sector for each ware in the route-and one entry to $MasterTable
+                            Add up to four entries to $TradeRouteLookupTableByBuyerAndWare-one for each sector for each ware in the route-and one entry to $MasterTable
                         -->
                         <run_actions ref="LIB_uuid_gen.GenerateUUID" result="$UUID"/>
 
-                        <set_value name="GlobalTradeRouteTables.$MasterTable.$UUID" exact="table[
-                                $'SectorA' = $SectorA,
-                                $'SectorB' = $SectorB,
-                                $'WareMovedFromAToB' = $WareMovedFromAToB,
-                                $'AmountMovedFromAToB' = $AmountMovedFromAToB,
-                                $'WareMovedFromBToA' = $WareMovedFromBToA,
-                                $'AmountMovedFromAToB' = $AmountMovedFromBToA
-                            ]"/>
+                        <!-- string keys must start with $, add prefix to UUID -->
+                        <set_value name="$UUIDKey" exact="'$%s'.[$UUID]"/>
 
-                        <do_if value="@$WareMovedFromAToB">
-                            <set_value name="GlobalTradeRouteTables.$TradeRouteLookupBySectorAndWare.$SectorA" exact="table[
-                                $'WareMovedFromAToB' = $UUID
-                            ]"/>
-                            <set_value name="GlobalTradeRouteTables.$TradeRouteLookupBySectorAndWare.$SectorB" exact="table[
-                                $'WareMovedFromAToB' = $UUID
-                            ]"/>
+                        <set_value name="GlobalTradeRouteTables.$MasterTable.{ $UUIDKey }" exact="table[ '$BuyerSector' = $BuyerSector, '$SupplierSector' = $SupplierSector, '$ContractedWare' = $ContractedWare, '$ContractedAmount' = $ContractedAmount ]"/>
+
+                        <!-- Be sure tables exist before trying to set key-value pairs -->
+                        <do_if value="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.keys.list.indexof.$BuyerSector == 0">
+                            <set_value name="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector" exact="table[]"/>
                         </do_if>
-                        <do_if value="@$WareMovedFromBToA">
-                            <set_value name="GlobalTradeRouteTables.$TradeRouteLookupBySectorAndWare.$SectorA" exact="table[
-                                $'WareMovedFromBToA' = $UUID
-                            ]"/>
-                            <set_value name="GlobalTradeRouteTables.$TradeRouteLookupBySectorAndWare.$SectorB" exact="table[
-                                $'WareMovedFromBToA' = $UUID
-                            ]"/>
+                        <do_if value="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector.keys.list.indexof.$SupplierSector == 0">
+                            <set_value name="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector" exact="table[]"/>
                         </do_if>
+                        <set_value name="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector.$ContractedWare" exact="$UUIDKey"/>
+                        
+                        <!-- Be sure tables exist before trying to set key-value pairs -->
+                        <do_if value="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.keys.list.indexof.$SupplierSector == 0">
+                            <set_value name="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector" exact="table[]"/>
+                        </do_if>
+                        <do_if value="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector.keys.list.indexof.$BuyerSector == 0">
+                            <set_value name="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector" exact="table[]"/>
+                        </do_if>
+                        <set_value name="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector.$ContractedWare" exact="$UUIDKey"/>
 
                     </actions>
                 </library>
@@ -88,23 +100,113 @@
                 <!-- route removal  -->
                 <library name="RemoveRouteByUUID" purpose="run_actions">
                     <params>
-                        <param name="UUID" comment="The UUID of the route to remove from the routes manager"/>
+                        <param name="UUID" comment="The UUID of the route to remove from the route manager"/>
                     </params>
                     <actions>
+                        <set_value name="$BuyerSector" exact="GlobalTradeRouteTables.MasterTable.{ $UUID }.{ '$BuyerSector' }"/>
+                        <set_value name="$SupplierSector" exact="GlobalTradeRouteTables.MasterTable.{ $UUID }.{ '$SupplierSector' }"/>
+                        <set_value name="$ContractedWare" exact="GlobalTradeRouteTables.MasterTable.{ $UUID }.{ '$ContractedWare' }"/>
                         <remove_value name="GlobalTradeRouteTables.MasterTable.{ $UUID }"/>
+                        <remove_value name="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector.$ContractedWare"/>
+                        <remove_value name="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector.$ContractedWare"/>
                     </actions>
                 </library>
 
-                <!-- find trade route given a ware and the destination sector -->
-                <library name="FindRouteBySectorAndWare" purpose="run_actions">
+                <!-- find trade routes given a ware and the destination sector -->
+                <library name="GetRoutesByBuyerAndWare" purpose="run_actions">
                     <params>
-                        <param name="Sector" comment="The sector that is the destination of the ware"/>
-                        <param name="Ware" comment="The ware in transit"/>
+                        <param name="BuyerSector" comment="The sector that is the buyer of the ware"/>
+                        <param name="Ware" comment="The ware for search"/>
                     </params>
                     <actions>
-                        <return>
-                            <retval name="TradeRoute" value="GlobalTradeRouteTables.MasterTable.{ GlobalTradeRouteTables.$TradeRouteLookupBySectorAndWare.{ $Sector }.{ Ware } }" />
-                        </return>
+                        <create_list name="$Routes"/>
+                        <do_for_each name="$SupplierSector" in="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector">
+                            <do_for_each name="$ContractedWare" in="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector">
+                                <do_if value="$Ware == $ContractedWare">
+                                    <append_to_list name="$Routes" exact="GlobalTradeRouteTables.MasterTable.{ GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector.$ContractedWare }" />
+                                </do_if>
+                            </do_for_each>
+                        </do_for_each>
+                        <return value="$Routes"/>
+                    </actions>
+                </library>
+
+                <!-- find trade routes given a ware and the supplier sector -->
+                <library name="GetRoutesBySupplierAndWare" purpose="run_actions">
+                    <params>
+                        <param name="SupplierSector" comment="The sector that is the supplier of the ware"/>
+                        <param name="Ware" comment="The ware for search"/>
+                    </params>
+                    <actions>
+                        <create_list name="$Routes"/>
+                        <do_for_each name="$BuyerSector" in="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector">
+                            <do_for_each name="$ContractedWare" in="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector">
+                                <do_if value="$Ware == $ContractedWare">
+                                    <append_to_list name="$Routes" exact="GlobalTradeRouteTables.MasterTable.{ GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector.$ContractedWare }" />
+                                </do_if>
+                            </do_for_each>
+                        </do_for_each>
+                        <return value="$Routes"/>
+                    </actions>
+                </library>
+
+                <!-- find amount of ware already contracted for purchase, optionally only give amount imported from foreigners -->
+                <library name="GetAmountContractedForPurchaseBySectorAndWare" purpose="run_actions">
+                    <params>
+                        <param name="BuyerSector" comment="The sector that is the buyer of the ware"/>
+                        <param name="Ware" comment="The ware for search"/>
+                        <param name="ForeignOnly" comment="boolean to search for only foreign contracts"/>
+                    </params>
+                    <actions>
+                        <set_value name="$TotalContractedAmount" exact="0"/>
+
+                        <run_actions ref="GetRoutesByBuyerAndWare" result="$TradeRoutes">
+                            <param name="BuyerSector" value="$BuyerSector" />
+                            <param name="Ware" value="$Ware" />
+                        </run_actions>
+
+                        <do_for_each name="$Route" in="$TradeRoutes">
+                            <do_if value="$ForeignOnly">
+                                <do_if value="$Route.{ '$SupplierSector' }.trueowner != $BuyerSector.trueowner">
+                                    <set_value name="$TotalContractedAmount" exact="$Route.{ '$ContractedAmount' }" operation="add"/>
+                                </do_if>
+                            </do_if>
+                            <do_else>
+                                <set_value name="$TotalContractedAmount" exact="$Route.{ '$ContractedAmount' }" operation="add"/>
+                            </do_else>
+                        </do_for_each>
+
+                        <return value="$TotalContractedAmount"/>
+                    </actions>
+                </library>
+
+                <!-- find amount of ware already contracted for sale, optionally only give amount sold to foreigners -->
+                <library name="GetAmountContractedForSaleBySectorAndWare" purpose="run_actions">
+                    <params>
+                        <param name="SupplierSector" comment="The sector that is the supplier of the ware"/>
+                        <param name="Ware" comment="The ware for search"/>
+                        <param name="ForeignOnly" comment="boolean to search for only foreign contracts"/>
+                    </params>
+                    <actions>
+                        <set_value name="$TotalContractedAmount" exact="0"/>
+
+                        <run_actions ref="GetRoutesBySupplierAndWare" result="$TradeRoutes">
+                            <param name="SupplierSector" value="$SupplierSector" />
+                            <param name="Ware" value="$Ware" />
+                        </run_actions>
+
+                        <do_for_each name="$Route" in="$TradeRoutes">
+                            <do_if value="$ForeignOnly">
+                                <do_if value="$Route.{ '$BuyerSector' }.trueowner != $SupplierSector.trueowner">
+                                    <set_value name="$TotalContractedAmount" exact="$Route.{ '$ContractedAmount' }" operation="add"/>
+                                </do_if>
+                            </do_if>
+                            <do_else>
+                                <set_value name="$TotalContractedAmount" exact="$Route.{ '$ContractedAmount' }" operation="add"/>
+                            </do_else>
+                        </do_for_each>
+
+                        <return value="$TotalContractedAmount"/>
                     </actions>
                 </library>
 
@@ -114,9 +216,7 @@
                         <param name="UUID" comment="The uuid of the route we want"/>
                     </params>
                     <actions>
-                        <return>
-                            <retval name="TradeRoute" value="GlobalTradeRouteTables.MasterTable.{ $UUID }" />
-                        </return>
+                        <return value="GlobalTradeRouteTables.MasterTable.{ $UUID }"/>
                     </actions>
                 </library>
 
@@ -124,10 +224,10 @@
                 <library name="DumpMasterTableToLog" purpose="run_actions">
                     <actions>
 
-                        <debug_to_file directory="FactionTradeRoutes" name="'TradeRoutesDump%s.csv'.[player.age]" text="'%1, %2, %3, %4, %5, %6, %7\n'.['UUID', 'SectorA', 'SectorB', 'WareMovedFromAToB', 'AmountMovedFromAToB', 'WareMovedFromBToA', 'AmountMovedFromBToA']" />
+                        <debug_to_file directory="FactionTradeRoutes" name="'TradeRoutesDump%s.csv'.[player.age]" text="'%1, %2, %3, %4, %5, %6, %7\n'.['UUID', 'BuyerSector', 'SupplierSector', 'ContractedWare', 'ContractedAmount', 'WareMovedFromBToA', 'AmountMovedFromBToA']" />
 
                         <do_for_each name="$UUID" in="$GlobalTradeRouteTables.MasterTable.keys.list">
-                            <debug_to_file directory="FactionTradeRoutes" name="'TradeRoutesDump%s.csv'.[player.age]" text="'%1, %2, %3, %4, %5, %6, %7\n'.[$UUID, $GlobalTradeRouteTables.MasterTable.$UUID.$'SectorA'.knownname, $GlobalTradeRouteTables.MasterTable.$UUID.$'SectorB'.knownname, $GlobalTradeRouteTables.MasterTable.$UUID.$'WareMovedFromAToB'.name, $GlobalTradeRouteTables.MasterTable.$UUID.$'AmountMovedFromAToB', $GlobalTradeRouteTables.MasterTable.$UUID.$'WareMovedFromBToA'.name, $GlobalTradeRouteTables.MasterTable.$UUID.$'AmountMovedFromBToA']" />
+                            <debug_to_file directory="FactionTradeRoutes" name="'TradeRoutesDump%s.csv'.[player.age]" text="'%1, %2, %3, %4, %5, %6, %7\n'.[$UUID, $GlobalTradeRouteTables.MasterTable.$UUID.{ '$BuyerSector' }.knownname, $GlobalTradeRouteTables.MasterTable.$UUID.{ '$SupplierSector' }.knownname, $GlobalTradeRouteTables.MasterTable.$UUID.{ '$ContractedWare' }.name, $GlobalTradeRouteTables.MasterTable.$UUID.{ '$ContractedAmount' }, $GlobalTradeRouteTables.MasterTable.$UUID.{ '$WareMovedFromBToA' }.name, $GlobalTradeRouteTables.MasterTable.$UUID.{ '$AmountMovedFromBToA' }]" />
                         </do_for_each>
 
                     </actions>
