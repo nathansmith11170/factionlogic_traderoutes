@@ -341,5 +341,486 @@
                 </do_if>
             </actions>
         </library>
+
+        <library name="AddRoute_WhenRouteIsAddedToNonEmptyTable_AddsRouteToMasterTable" purpose="run_actions">
+            <actions>
+                <!-- setup -->
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <get_ware_definition result="$Wares" flags="economy" faction="faction.argon" />
+
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable" 
+                exact="table[ {'$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'} = table[ 
+                    {'$BuyerSector'} = $BuyerSector, 
+                    {'$SupplierSector'} = $SupplierSector, 
+                    {'$ContractedWare'} = $Wares.{1}, 
+                    {'$ContractedAmount'} = 10000
+                    ]
+                ]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector" exact="table[]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector" exact="table[]"/>
+
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+
+                <!-- unit under test -->
+                <run_actions ref="md.LIB_trade_routes.AddRoute">
+                    <param name="BuyerSector" value="$BuyerSector"/>
+                    <param name="SupplierSector" value="$SupplierSector"/>
+                    <param name="ContractedWare" value="$Wares.{2}"/>
+                    <param name="ContractedAmount" value="5000"/>
+                </run_actions>
+
+                <!-- checks and logs -->
+                <set_value name="$MasterTable" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable"/>
+                <set_value name="$TradeRouteLookupTableByBuyerSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector"/>
+                <set_value name="$TradeRouteLookupTableBySupplierSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector"/>
+
+                <set_value name="$Errored" exact="0"/>
+
+                <do_if value="$MasterTable.keys.count != 2">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'Error in AddRoute_WhenRouteIsAddedToNonEmptyTable_AddsRouteToMasterTable, expected MasterTable to have 2 keys, found %s'.[$MasterTable.keys.count]"/>
+                    <set_value name="$Errored" exact="1"/>
+                </do_if>
+
+                <do_if value="not $Errored">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'AddRoute_WhenRouteIsAddedToNonEmptyTable_AddsRouteToMasterTable passed.'"/>
+                </do_if>
+            </actions>
+        </library>
+
+        <library name="AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsBuyerSectorInMasterTable" purpose="run_actions">
+            <actions>
+                <!-- setup -->
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <get_ware_definition result="$Wares" flags="economy" faction="faction.argon" />
+
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable" 
+                exact="table[ {'$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'} = table[ 
+                    {'$BuyerSector'} = $BuyerSector, 
+                    {'$SupplierSector'} = $SupplierSector, 
+                    {'$ContractedWare'} = $Wares.{1}, 
+                    {'$ContractedAmount'} = 10000
+                    ]
+                ]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector" exact="table[]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector" exact="table[]"/>
+
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+
+                <!-- unit under test -->
+                <run_actions ref="md.LIB_trade_routes.AddRoute" result="$UUID">
+                    <param name="BuyerSector" value="$BuyerSector"/>
+                    <param name="SupplierSector" value="$SupplierSector"/>
+                    <param name="ContractedWare" value="$Wares.{2}"/>
+                    <param name="ContractedAmount" value="5000"/>
+                </run_actions>
+
+                <!-- checks and logs -->
+                <set_value name="$MasterTable" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable"/>
+                <set_value name="$TradeRouteLookupTableByBuyerSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector"/>
+                <set_value name="$TradeRouteLookupTableBySupplierSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector"/>
+
+                <set_value name="$Errored" exact="0"/>
+                
+                <do_if value="$MasterTable.{$UUID}.{'$BuyerSector'} != $BuyerSector">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'Error in AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsBuyerSectorInMasterTable, expected BuyerSector to be %s, found %s'.[$BuyerSector.knownname, $MasterTable.{$UUID}.{'$BuyerSector'}.knownname]"/>
+                    <set_value name="$Errored" exact="1"/>
+                </do_if>
+
+                <do_if value="not $Errored">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsBuyerSectorInMasterTable passed.'"/>
+                </do_if>
+            </actions>
+        </library>
+
+        <library name="AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsSupplierSectorInMasterTable" purpose="run_actions">
+            <actions>
+                <!-- setup -->
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <get_ware_definition result="$Wares" flags="economy" faction="faction.argon" />
+
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable" 
+                exact="table[ {'$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'} = table[ 
+                    {'$BuyerSector'} = $BuyerSector, 
+                    {'$SupplierSector'} = $SupplierSector, 
+                    {'$ContractedWare'} = $Wares.{1}, 
+                    {'$ContractedAmount'} = 10000
+                    ]
+                ]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector" exact="table[]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector" exact="table[]"/>
+
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+
+                <!-- unit under test -->
+                <run_actions ref="md.LIB_trade_routes.AddRoute" result="$UUID">
+                    <param name="BuyerSector" value="$BuyerSector"/>
+                    <param name="SupplierSector" value="$SupplierSector"/>
+                    <param name="ContractedWare" value="$Wares.{2}"/>
+                    <param name="ContractedAmount" value="5000"/>
+                </run_actions>
+
+                <!-- checks and logs -->
+                <set_value name="$MasterTable" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable"/>
+                <set_value name="$TradeRouteLookupTableByBuyerSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector"/>
+                <set_value name="$TradeRouteLookupTableBySupplierSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector"/>
+
+                <set_value name="$Errored" exact="0"/>
+                
+                <do_if value="$MasterTable.{$UUID}.{'$SupplierSector'} != $SupplierSector">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'Error in AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsSupplierSectorInMasterTable, expected BuyerSector to be %s, found %s'.[$SupplierSector.knownname, $MasterTable.{$UUID}.{'$SupplierSector'}.knownname]"/>
+                    <set_value name="$Errored" exact="1"/>
+                </do_if>
+
+                <do_if value="not $Errored">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsSupplierSectorInMasterTable passed.'"/>
+                </do_if>
+            </actions>
+        </library>
+
+        <library name="AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsContractedWareInMasterTable" purpose="run_actions">
+            <actions>
+                <!-- setup -->
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <get_ware_definition result="$Wares" flags="economy" faction="faction.argon" />
+
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable" 
+                exact="table[ {'$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'} = table[ 
+                    {'$BuyerSector'} = $BuyerSector, 
+                    {'$SupplierSector'} = $SupplierSector, 
+                    {'$ContractedWare'} = $Wares.{1}, 
+                    {'$ContractedAmount'} = 10000
+                    ]
+                ]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector" exact="table[]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector" exact="table[]"/>
+
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+
+                <!-- unit under test -->
+                <run_actions ref="md.LIB_trade_routes.AddRoute" result="$UUID">
+                    <param name="BuyerSector" value="$BuyerSector"/>
+                    <param name="SupplierSector" value="$SupplierSector"/>
+                    <param name="ContractedWare" value="$Wares.{2}"/>
+                    <param name="ContractedAmount" value="5000"/>
+                </run_actions>
+
+                <!-- checks and logs -->
+                <set_value name="$MasterTable" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable"/>
+                <set_value name="$TradeRouteLookupTableByBuyerSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector"/>
+                <set_value name="$TradeRouteLookupTableBySupplierSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector"/>
+
+                <set_value name="$Errored" exact="0"/>
+                
+                <do_if value="$MasterTable.{$UUID}.{'$ContractedWare'} != $Wares.{2}">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'Error in AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsContractedWareInMasterTable, expected ContractedWare to be %s, found %s'.[$Wares.{2}.name, $MasterTable.{$UUID}.{'$ContractedWare'}.name]"/>
+                    <set_value name="$Errored" exact="1"/>
+                </do_if>
+
+                <do_if value="not $Errored">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsContractedWareInMasterTable passed.'"/>
+                </do_if>
+            </actions>
+        </library>
+
+        <library name="AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsContractedAmountInMasterTable" purpose="run_actions">
+            <actions>
+                <!-- setup -->
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <get_ware_definition result="$Wares" flags="economy" faction="faction.argon" />
+
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable" 
+                exact="table[ {'$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'} = table[ 
+                    {'$BuyerSector'} = $BuyerSector, 
+                    {'$SupplierSector'} = $SupplierSector, 
+                    {'$ContractedWare'} = $Wares.{1}, 
+                    {'$ContractedAmount'} = 10000
+                    ]
+                ]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector" exact="table[]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector" exact="table[]"/>
+
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+
+                <!-- unit under test -->
+                <run_actions ref="md.LIB_trade_routes.AddRoute" result="$UUID">
+                    <param name="BuyerSector" value="$BuyerSector"/>
+                    <param name="SupplierSector" value="$SupplierSector"/>
+                    <param name="ContractedWare" value="$Wares.{2}"/>
+                    <param name="ContractedAmount" value="5000"/>
+                </run_actions>
+
+                <!-- checks and logs -->
+                <set_value name="$MasterTable" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable"/>
+                <set_value name="$TradeRouteLookupTableByBuyerSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector"/>
+                <set_value name="$TradeRouteLookupTableBySupplierSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector"/>
+
+                <set_value name="$Errored" exact="0"/>
+                
+                <do_if value="$MasterTable.{$UUID}.{'$ContractedAmount'} != 5000">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'Error in AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsContractedAmountInMasterTable, expected ContractedAmount to be %s, found %s'.[5000, $MasterTable.{$UUID}.{'$ContractedAmount'}]"/>
+                    <set_value name="$Errored" exact="1"/>
+                </do_if>
+
+                <do_if value="not $Errored">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsContractedAmountInMasterTable passed.'"/>
+                </do_if>
+            </actions>
+        </library>
+
+        <library name="AddRoute_WhenRouteIsAddedToNonEmptyTable_AddsToTradeRouteLookupTableByBuyerSector" purpose="run_actions">
+            <actions>
+                <!-- setup -->
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <get_ware_definition result="$Wares" flags="economy" faction="faction.argon" />
+
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable" 
+                exact="table[ {'$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'} = table[ 
+                    {'$BuyerSector'} = $BuyerSector, 
+                    {'$SupplierSector'} = $SupplierSector, 
+                    {'$ContractedWare'} = $Wares.{1}, 
+                    {'$ContractedAmount'} = 10000
+                    ]
+                ]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector"
+                exact="table[
+                    {$BuyerSector} = table[
+                        {$SupplierSector} = table[
+                            {$Wares.{1}} = '$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'
+                            ]
+                        ]
+                    ]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector"
+                exact="table[
+                    {$SupplierSector} = table[
+                        {$BuyerSector} = table[
+                            {$Wares.{1}} = '$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'
+                            ]
+                        ]
+                    ]"/>
+
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+
+                <!-- unit under test -->
+                <run_actions ref="md.LIB_trade_routes.AddRoute">
+                    <param name="BuyerSector" value="$BuyerSector"/>
+                    <param name="SupplierSector" value="$SupplierSector"/>
+                    <param name="ContractedWare" value="$Wares.{2}"/>
+                    <param name="ContractedAmount" value="5000"/>
+                </run_actions>
+
+                <!-- checks and logs -->
+                <set_value name="$MasterTable" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable"/>
+                <set_value name="$TradeRouteLookupTableByBuyerSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector"/>
+                <set_value name="$TradeRouteLookupTableBySupplierSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector"/>
+
+                <set_value name="$Errored" exact="0"/>
+
+                <do_if value="$TradeRouteLookupTableByBuyerSector.keys.count != 2">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'Error in AddRoute_WhenRouteIsAddedToNonEmptyTable_AddsToTradeRouteLookupTableByBuyerSector, expected TradeRouteLookupTableByBuyerSector to have 2 keys, found %s'.[$TradeRouteLookupTableByBuyerSector.keys.count]"/>
+                    <set_value name="$Errored" exact="1"/>
+                </do_if>
+
+                <do_if value="not $Errored">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'AddRoute_WhenRouteIsAddedToNonEmptyTable_AddsToTradeRouteLookupTableByBuyerSector passed.'"/>
+                </do_if>
+            </actions>
+        </library>
+
+        <library name="AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsUUIDInTradeRouteLookupTableByBuyerSector" purpose="run_actions">
+            <actions>
+                <!-- setup -->
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <get_ware_definition result="$Wares" flags="economy" faction="faction.argon" />
+
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable" 
+                exact="table[ {'$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'} = table[ 
+                    {'$BuyerSector'} = $BuyerSector, 
+                    {'$SupplierSector'} = $SupplierSector, 
+                    {'$ContractedWare'} = $Wares.{1}, 
+                    {'$ContractedAmount'} = 10000
+                    ]
+                ]"/>
+
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector"
+                exact="table[
+                    {$BuyerSector} = table[
+                        {$SupplierSector} = table[
+                            {$Wares.{1}} = '$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'
+                            ]
+                        ]
+                    ]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector"
+                exact="table[
+                    {$SupplierSector} = table[
+                        {$BuyerSector} = table[
+                            {$Wares.{1}} = '$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'
+                            ]
+                        ]
+                    ]"/>
+
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+
+                <!-- unit under test -->
+                <run_actions ref="md.LIB_trade_routes.AddRoute" result="$UUID">
+                    <param name="BuyerSector" value="$BuyerSector"/>
+                    <param name="SupplierSector" value="$SupplierSector"/>
+                    <param name="ContractedWare" value="$Wares.{2}"/>
+                    <param name="ContractedAmount" value="5000"/>
+                </run_actions>
+
+                <!-- checks and logs -->
+                <set_value name="$MasterTable" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable"/>
+                <set_value name="$TradeRouteLookupTableByBuyerSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector"/>
+                <set_value name="$TradeRouteLookupTableBySupplierSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector"/>
+
+                <set_value name="$Errored" exact="0"/>
+
+                <do_if value="$TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector.{$Wares.{2}} != $UUID">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'Error in AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsUUIDInTradeRouteLookupTableByBuyerSector, expected UUID in TradeRouteLookupTableBySupplierSector to match MasterTable, but MasterTable\'s key: %s does not match %s'.[$UUID, $TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector.{$Wares.{2}}]"/>
+                    <set_value name="$Errored" exact="1"/>
+                </do_if>
+
+                <do_if value="not $Errored">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsUUIDInTradeRouteLookupTableByBuyerSector passed.'"/>
+                </do_if>
+            </actions>
+        </library>
+
+        <library name="AddRoute_WhenRouteIsAddedToNonEmptyTable_AddsToTradeRouteLookupTableBySupplierSector" purpose="run_actions">
+            <actions>
+                <!-- setup -->
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <get_ware_definition result="$Wares" flags="economy" faction="faction.argon" />
+
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable" 
+                exact="table[ {'$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'} = table[ 
+                    {'$BuyerSector'} = $BuyerSector, 
+                    {'$SupplierSector'} = $SupplierSector, 
+                    {'$ContractedWare'} = $Wares.{1}, 
+                    {'$ContractedAmount'} = 10000
+                    ]
+                ]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector"
+                exact="table[
+                    {$BuyerSector} = table[
+                        {$SupplierSector} = table[
+                            {$Wares.{1}} = '$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'
+                            ]
+                        ]
+                    ]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector"
+                exact="table[
+                    {$SupplierSector} = table[
+                        {$BuyerSector} = table[
+                            {$Wares.{1}} = '$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'
+                            ]
+                        ]
+                    ]"/>
+
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+
+                <!-- unit under test -->
+                <run_actions ref="md.LIB_trade_routes.AddRoute">
+                    <param name="BuyerSector" value="$BuyerSector"/>
+                    <param name="SupplierSector" value="$SupplierSector"/>
+                    <param name="ContractedWare" value="$Wares.{2}"/>
+                    <param name="ContractedAmount" value="5000"/>
+                </run_actions>
+
+                <!-- checks and logs -->
+                <set_value name="$MasterTable" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable"/>
+                <set_value name="$TradeRouteLookupTableByBuyerSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector"/>
+                <set_value name="$TradeRouteLookupTableBySupplierSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector"/>
+
+                <set_value name="$Errored" exact="0"/>
+
+                <do_if value="$TradeRouteLookupTableBySupplierSector.keys.count != 2">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'Error in AddRoute_WhenRouteIsAddedToNonEmptyTable_AddsToTradeRouteLookupTableBySupplierSector, expected TradeRouteLookupTableByBuyerSector to have 2 keys, found %s'.[$TradeRouteLookupTableBySupplierSector.keys.count]"/>
+                    <set_value name="$Errored" exact="1"/>
+                </do_if>
+
+                <do_if value="not $Errored">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'AddRoute_WhenRouteIsAddedToNonEmptyTable_AddsToTradeRouteLookupTableBySupplierSector passed.'"/>
+                </do_if>
+            </actions>
+        </library>
+
+        <library name="AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsUUIDInTradeRouteLookupTableBySupplierSector" purpose="run_actions">
+            <actions>
+                <!-- setup -->
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <get_ware_definition result="$Wares" flags="economy" faction="faction.argon" />
+
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable" 
+                exact="table[ {'$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'} = table[ 
+                    {'$BuyerSector'} = $BuyerSector, 
+                    {'$SupplierSector'} = $SupplierSector, 
+                    {'$ContractedWare'} = $Wares.{1}, 
+                    {'$ContractedAmount'} = 10000
+                    ]
+                ]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector"
+                exact="table[
+                    {$BuyerSector} = table[
+                        {$SupplierSector} = table[
+                            {$Wares.{1}} = '$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'
+                            ]
+                        ]
+                    ]"/>
+                <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector"
+                exact="table[
+                    {$SupplierSector} = table[
+                        {$BuyerSector} = table[
+                            {$Wares.{1}} = '$AB9DC531-EA81-43A7-97E1-8681BAF32FCC'
+                            ]
+                        ]
+                    ]"/>
+
+                <find_sector_in_range name="$BuyerSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+                <find_sector_in_range name="$SupplierSector" object="player.entity" maxdistance="3"></find_sector_in_range>
+
+                <!-- unit under test -->
+                <run_actions ref="md.LIB_trade_routes.AddRoute" result="$UUID">
+                    <param name="BuyerSector" value="$BuyerSector"/>
+                    <param name="SupplierSector" value="$SupplierSector"/>
+                    <param name="ContractedWare" value="$Wares.{2}"/>
+                    <param name="ContractedAmount" value="5000"/>
+                </run_actions>
+
+                <!-- checks and logs -->
+                <set_value name="$MasterTable" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable"/>
+                <set_value name="$TradeRouteLookupTableByBuyerSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector"/>
+                <set_value name="$TradeRouteLookupTableBySupplierSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector"/>
+
+                <set_value name="$Errored" exact="0"/>
+
+                <do_if value="$TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector.{$Wares.{2}} != $UUID">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'Error in AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsUUIDInTradeRouteLookupTableBySupplierSector, expected UUID in TradeRouteLookupTableBySupplierSector to match MasterTable, but MasterTable\'s key: %s does not match %s'.[$UUID, $TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector.{$Wares.{2}}]"/>
+                    <set_value name="$Errored" exact="1"/>
+                </do_if>
+
+                <do_if value="not $Errored">
+                    <debug_to_file directory="'FactionTradeRoutes'" name="'TestResults.log'" text="'AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsUUIDInTradeRouteLookupTableBySupplierSector passed.'"/>
+                </do_if>
+            </actions>
+        </library>
+
     </cues>
 </mdscript>

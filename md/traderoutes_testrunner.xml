@@ -15,6 +15,15 @@
                 <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_SetsUUIDInTradeRouteLookupTableByBuyerSector"/>
                 <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_AddsToTradeRouteLookupTableBySupplierSector"/>
                 <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_SetsUUIDInTradeRouteLookupTableBySupplierSector"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_AddsRouteToMasterTable"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsBuyerSectorInMasterTable"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsSupplierSectorInMasterTable"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsContractedWareInMasterTable"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsContractedAmountInMasterTable"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_AddsToTradeRouteLookupTableByBuyerSector"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsUUIDInTradeRouteLookupTableByBuyerSector"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_AddsToTradeRouteLookupTableBySupplierSector"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsUUIDInTradeRouteLookupTableBySupplierSector"/>
             </actions>
         </cue>
     </cues>

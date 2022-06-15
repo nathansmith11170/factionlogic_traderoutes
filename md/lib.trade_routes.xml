@@ -104,6 +104,8 @@
                         <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector" exact="$TradeRouteLookupTableByBuyerSector"/>
                         <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector" exact="$TradeRouteLookupTableBySupplierSector"/>
 
+                        <return value="$UUIDKey"/>
+
                     </actions>
                 </library>
 
@@ -243,7 +245,6 @@
                     </actions>
                 </library>
 
-                <!-- $AB9DC531-EA81-43A7-97E1-8681BAF32FCC -->
             </cues>
         </cue>
     </cues>
