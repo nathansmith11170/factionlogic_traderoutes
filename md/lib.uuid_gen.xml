@@ -21,8 +21,8 @@
                 <set_value name="$Result.{14}" exact="'-'"/>
                 <set_value name="$Result.{19}" exact="'-'"/>
                 <set_value name="$Result.{24}" exact="'-'"/>
-
-                <return value="'%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36'.$Result"/>
+             
+                <return value="'%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s'.[$Result.{1}, $Result.{2}, $Result.{3}, $Result.{4}, $Result.{5}, $Result.{6}, $Result.{7}, $Result.{8}, $Result.{9}, $Result.{10}, $Result.{11}, $Result.{12}, $Result.{13}, $Result.{14}, $Result.{15}, $Result.{16}, $Result.{17}, $Result.{18}, $Result.{19}, $Result.{20}, $Result.{21}, $Result.{22}, $Result.{23}, $Result.{24}, $Result.{25}, $Result.{26}, $Result.{27}, $Result.{28}, $Result.{29}, $Result.{30}, $Result.{31}, $Result.{32}, $Result.{33}, $Result.{34}, $Result.{35}, $Result.{36}]"/>
             </actions>
         </library>
     </cues>

@@ -2,7 +2,7 @@
 <mdscript name="LIB_trade_routes"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
     <cues>
-        <cue name="GlobalTradeRouteTables">
+        <cue name="GlobalTradeRouteTables" namespace="static">
             <actions>
 
                 <!-- 
@@ -56,12 +56,17 @@
                         <param name="ContractedAmount" />
                     </params>
                     <actions>
+                        <!-- include shared tables in run_actions context -->
+                        <set_value name="$MasterTable" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable"/>
+                        <set_value name="$TradeRouteLookupTableByBuyerSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector"/>
+                        <set_value name="$TradeRouteLookupTableBySupplierSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector"/>
+
                         <!--
                             Check contraint:
                             Any sector can only have one UUID for any unique ware and supplier combination
                             Log error and do not alter tables if constraint is violated
                         -->
-                        <do_if value="@GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{ $BuyerSector }.{ $ContractedWare }">
+                        <do_if value="@$TradeRouteLookupTableByBuyerSector.{ $BuyerSector }.{ $ContractedWare }">
                             <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Violated uniqueness constraint for route between Buyer: %s and Supplier: %s carrying Ware: %s'.[$BuyerSector.knownname, $SupplierSector.knownname, $ContractedWare.name]"/>
                             <return/>
                         </do_if>
@@ -69,30 +74,35 @@
                         <!--
                             Add up to four entries to $TradeRouteLookupTableByBuyerAndWare-one for each sector for each ware in the route-and one entry to $MasterTable
                         -->
-                        <run_actions ref="LIB_uuid_gen.GenerateUUID" result="$UUID"/>
+                        <run_actions ref="md.LIB_uuid_gen.GenerateUUID" result="$UUID"/>
 
                         <!-- string keys must start with $, add prefix to UUID -->
                         <set_value name="$UUIDKey" exact="'$%s'.[$UUID]"/>
 
-                        <set_value name="GlobalTradeRouteTables.$MasterTable.{ $UUIDKey }" exact="table[ '$BuyerSector' = $BuyerSector, '$SupplierSector' = $SupplierSector, '$ContractedWare' = $ContractedWare, '$ContractedAmount' = $ContractedAmount ]"/>
+                        <set_value name="$MasterTable.{ $UUIDKey }" exact="table[ {'$BuyerSector'} = $BuyerSector, {'$SupplierSector'} = $SupplierSector, {'$ContractedWare'} = $ContractedWare, {'$ContractedAmount'} = $ContractedAmount ]"/>
 
                         <!-- Be sure tables exist before trying to set key-value pairs -->
-                        <do_if value="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.keys.list.indexof.$BuyerSector == 0">
-                            <set_value name="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector" exact="table[]"/>
+                        <do_if value="$TradeRouteLookupTableByBuyerSector.keys.list.indexof.{$BuyerSector} == 0">
+                            <set_value name="$TradeRouteLookupTableByBuyerSector.$BuyerSector" exact="table[]"/>
                         </do_if>
-                        <do_if value="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector.keys.list.indexof.$SupplierSector == 0">
-                            <set_value name="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector" exact="table[]"/>
+                        <do_if value="$TradeRouteLookupTableByBuyerSector.$BuyerSector.keys.list.indexof.{$SupplierSector} == 0">
+                            <set_value name="$TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector" exact="table[]"/>
                         </do_if>
-                        <set_value name="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector.$ContractedWare" exact="$UUIDKey"/>
+                        <set_value name="$TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector.{$ContractedWare}" exact="$UUIDKey"/>
                         
                         <!-- Be sure tables exist before trying to set key-value pairs -->
-                        <do_if value="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.keys.list.indexof.$SupplierSector == 0">
-                            <set_value name="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector" exact="table[]"/>
+                        <do_if value="$TradeRouteLookupTableBySupplierSector.keys.list.indexof.{$SupplierSector} == 0">
+                            <set_value name="$TradeRouteLookupTableBySupplierSector.$SupplierSector" exact="table[]"/>
                         </do_if>
-                        <do_if value="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector.keys.list.indexof.$BuyerSector == 0">
-                            <set_value name="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector" exact="table[]"/>
+                        <do_if value="$TradeRouteLookupTableBySupplierSector.$SupplierSector.keys.list.indexof.{$BuyerSector} == 0">
+                            <set_value name="$TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector" exact="table[]"/>
                         </do_if>
-                        <set_value name="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector.$ContractedWare" exact="$UUIDKey"/>
+                        <set_value name="$TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector.{$ContractedWare}" exact="$UUIDKey"/>
+
+                        <!-- set shared tables from run_actions context -->
+                        <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable" exact="$MasterTable"/>
+                        <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector" exact="$TradeRouteLookupTableByBuyerSector"/>
+                        <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector" exact="$TradeRouteLookupTableBySupplierSector"/>
 
                     </actions>
                 </library>
@@ -233,6 +243,7 @@
                     </actions>
                 </library>
 
+                <!-- $AB9DC531-EA81-43A7-97E1-8681BAF32FCC -->
             </cues>
         </cue>
     </cues>

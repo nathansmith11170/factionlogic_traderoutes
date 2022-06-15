@@ -1,4 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mdscript name="Trade_Routes_Testrunner" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
-
+    <cues>
+        <cue name="TradeRoutesTestRunner">
+            <conditions>
+                <event_cue_signalled cue="md.Setup.Start" />
+            </conditions>
+            <actions>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_AddsRouteToMasterTable"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_SetsBuyerSectorInMasterTable"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_SetsSupplierSectorInMasterTable"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_SetsContractedWareInMasterTable"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_SetcContractedAmountInMasterTable"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_AddsToTradeRouteLookupTableByBuyerSector"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_SetsUUIDInTradeRouteLookupTableByBuyerSector"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_AddsToTradeRouteLookupTableBySupplierSector"/>
+                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_SetsUUIDInTradeRouteLookupTableBySupplierSector"/>
+            </actions>
+        </cue>
+    </cues>
 </mdscript>
