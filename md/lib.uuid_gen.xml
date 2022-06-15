@@ -5,7 +5,7 @@
         <library name="GenerateUUID" purpose="run_actions">
             <actions>
                 <set_value name="$HexDigits" exact="['1', '0', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F']"/>
-                <set_value name="$HedDigitsEndingIn01" exact="['0', '5', '9', 'D']"/>
+                <set_value name="$HexDigitsEndingIn01" exact="['0', '5', '9', 'D']"/>
                 <set_value name="$Result" exact="[]"/>
 
                 <!-- Set random digits -->
@@ -14,7 +14,7 @@
                 </do_all>
 
                 <set_value name="$Result.{15}" exact="'4'"/> <!-- Set bits in positions 12-15 of time_hi_and_version to 0100 for version 4 UUID -->
-                <set_value name="$Result.{20}" exact="$HedDigitsEndingIn01.random"/> <!-- set bits in position 6 and 7 of clock_seq_hi_and_reserved to 0 and 1 respectively -->
+                <set_value name="$Result.{20}" exact="$HexDigitsEndingIn01.random"/> <!-- set bits in position 6 and 7 of clock_seq_hi_and_reserved to 0 and 1 respectively -->
 
                 <!-- Set Hyphens -->
                 <set_value name="$Result.{9}" exact="'-'"/>
