@@ -56,53 +56,40 @@
                         <param name="ContractedAmount" />
                     </params>
                     <actions>
-                        <!-- include shared tables in run_actions context -->
-                        <set_value name="$MasterTable" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable"/>
-                        <set_value name="$TradeRouteLookupTableByBuyerSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector"/>
-                        <set_value name="$TradeRouteLookupTableBySupplierSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector"/>
-
                         <!--
-                            Check contraint:
+                            Check constraint:
                             Any sector can only have one UUID for any unique ware and supplier combination
                             Log error and do not alter tables if constraint is violated
                         -->
-                        <do_if value="@$TradeRouteLookupTableByBuyerSector.{ $BuyerSector }.{ $ContractedWare }">
-                            <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutes.log'" text="'Violated uniqueness constraint for route between Buyer: %s and Supplier: %s carrying Ware: %s'.[$BuyerSector.knownname, $SupplierSector.knownname, $ContractedWare.name]"/>
+                        <do_if value="@md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{ $BuyerSector }.{ $SupplierSector }.{ $ContractedWare }">
+                            <debug_to_file directory="'FactionTradeRoutes'" name="'FactionTradeRoutesErrors.log'" text="'Violated uniqueness constraint for route between Buyer: %s and Supplier: %s carrying Ware: %s'.[$BuyerSector.knownname, $SupplierSector.knownname, $ContractedWare.name]"/>
                             <return/>
                         </do_if>
 
-                        <!--
-                            Add up to four entries to $TradeRouteLookupTableByBuyerAndWare-one for each sector for each ware in the route-and one entry to $MasterTable
-                        -->
                         <run_actions ref="md.LIB_uuid_gen.GenerateUUID" result="$UUID"/>
 
-                        <!-- string keys must start with $, add prefix to UUID -->
+                        <!-- string keys must start with '$', add prefix to UUID -->
                         <set_value name="$UUIDKey" exact="'$%s'.[$UUID]"/>
 
-                        <set_value name="$MasterTable.{ $UUIDKey }" exact="table[ {'$BuyerSector'} = $BuyerSector, {'$SupplierSector'} = $SupplierSector, {'$ContractedWare'} = $ContractedWare, {'$ContractedAmount'} = $ContractedAmount ]"/>
+                        <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable.{ $UUIDKey }" exact="table[ {'$BuyerSector'} = $BuyerSector, {'$SupplierSector'} = $SupplierSector, {'$ContractedWare'} = $ContractedWare, {'$ContractedAmount'} = $ContractedAmount ]"/>
 
                         <!-- Be sure tables exist before trying to set key-value pairs -->
-                        <do_if value="$TradeRouteLookupTableByBuyerSector.keys.list.indexof.{$BuyerSector} == 0">
-                            <set_value name="$TradeRouteLookupTableByBuyerSector.$BuyerSector" exact="table[]"/>
+                        <do_if value="not @md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{$BuyerSector}">
+                            <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{$BuyerSector}" exact="table[]"/>
                         </do_if>
-                        <do_if value="$TradeRouteLookupTableByBuyerSector.$BuyerSector.keys.list.indexof.{$SupplierSector} == 0">
-                            <set_value name="$TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector" exact="table[]"/>
+                        <do_if value="not @md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{$BuyerSector}.{$SupplierSector}">
+                            <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{$BuyerSector}.{$SupplierSector}" exact="table[]"/>
                         </do_if>
-                        <set_value name="$TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector.{$ContractedWare}" exact="$UUIDKey"/>
+                        <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{$BuyerSector}.{$SupplierSector}.{$ContractedWare}" exact="$UUIDKey"/>
                         
                         <!-- Be sure tables exist before trying to set key-value pairs -->
-                        <do_if value="$TradeRouteLookupTableBySupplierSector.keys.list.indexof.{$SupplierSector} == 0">
-                            <set_value name="$TradeRouteLookupTableBySupplierSector.$SupplierSector" exact="table[]"/>
+                        <do_if value="not @md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{$SupplierSector}">
+                            <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{$SupplierSector}" exact="table[]"/>
                         </do_if>
-                        <do_if value="$TradeRouteLookupTableBySupplierSector.$SupplierSector.keys.list.indexof.{$BuyerSector} == 0">
-                            <set_value name="$TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector" exact="table[]"/>
+                        <do_if value="not @md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{$SupplierSector}.{$BuyerSector}">
+                            <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{$SupplierSector}.{$BuyerSector}" exact="table[]"/>
                         </do_if>
-                        <set_value name="$TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector.{$ContractedWare}" exact="$UUIDKey"/>
-
-                        <!-- set shared tables from run_actions context -->
-                        <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable" exact="$MasterTable"/>
-                        <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector" exact="$TradeRouteLookupTableByBuyerSector"/>
-                        <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector" exact="$TradeRouteLookupTableBySupplierSector"/>
+                        <set_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{$SupplierSector}.{$BuyerSector}.{$ContractedWare}" exact="$UUIDKey"/>
 
                         <return value="$UUIDKey"/>
 
@@ -115,12 +102,35 @@
                         <param name="UUID" comment="The UUID of the route to remove from the route manager"/>
                     </params>
                     <actions>
-                        <set_value name="$BuyerSector" exact="GlobalTradeRouteTables.MasterTable.{ $UUID }.{ '$BuyerSector' }"/>
-                        <set_value name="$SupplierSector" exact="GlobalTradeRouteTables.MasterTable.{ $UUID }.{ '$SupplierSector' }"/>
-                        <set_value name="$ContractedWare" exact="GlobalTradeRouteTables.MasterTable.{ $UUID }.{ '$ContractedWare' }"/>
-                        <remove_value name="GlobalTradeRouteTables.MasterTable.{ $UUID }"/>
-                        <remove_value name="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector.$ContractedWare"/>
-                        <remove_value name="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector.$ContractedWare"/>
+                        <set_value name="$BuyerSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable.{ $UUID }.{ '$BuyerSector' }"/>
+                        <set_value name="$SupplierSector" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable.{ $UUID }.{ '$SupplierSector' }"/>
+                        <set_value name="$ContractedWare" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable.{ $UUID }.{ '$ContractedWare' }"/>
+
+                        <!-- Remove key from MasterTable -->
+                        <remove_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable.{ $UUID }"/>
+
+                        <!-- Remove key from lookup tables -->
+                        <remove_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{ $BuyerSector }.{ $SupplierSector }.{ $ContractedWare }"/>
+
+                        <!-- prune empty tables from the lookup -->
+                        <do_if value="@md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{ $BuyerSector }.{ $SupplierSector }.keys.count == 0">
+                            <remove_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{ $BuyerSector }.{ $SupplierSector }"/>
+                        </do_if>
+                        <do_if value="@md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{ $BuyerSector }.keys.count == 0">
+                            <remove_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{ $BuyerSector }"/>
+                        </do_if>
+
+                        <!-- Remove key from lookup tables -->
+                        <remove_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{ $SupplierSector }.{ $BuyerSector }.{ $ContractedWare }"/>
+
+                        <!-- prune empty tables from the lookup -->
+                        <do_if value="@md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{ $SupplierSector }.{ $BuyerSector }.keys.count == 0">
+                            <remove_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{ $SupplierSector }.{ $BuyerSector }"/>
+                        </do_if>
+                        <do_if value="@md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{ $BuyerSector }.keys.count == 0">
+                            <remove_value name="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{ $SupplierSector }"/>
+                        </do_if>
+
                     </actions>
                 </library>
 
@@ -132,13 +142,17 @@
                     </params>
                     <actions>
                         <create_list name="$Routes"/>
-                        <do_for_each name="$SupplierSector" in="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector">
-                            <do_for_each name="$ContractedWare" in="GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector">
-                                <do_if value="$Ware == $ContractedWare">
-                                    <append_to_list name="$Routes" exact="GlobalTradeRouteTables.MasterTable.{ GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.$BuyerSector.$SupplierSector.$ContractedWare }" />
-                                </do_if>
+
+                        <do_if value="@md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{$BuyerSector}">
+                            <do_for_each name="$SupplierSector" in="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{$BuyerSector}">
+                                <do_for_each name="$ContractedWare" in="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{$BuyerSector}.{$SupplierSector}">
+                                    <do_if value="$Ware == $ContractedWare">
+                                        <append_to_list name="$Routes" exact="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{$BuyerSector}.{$SupplierSector}.{$ContractedWare}" />
+                                    </do_if>
+                                </do_for_each>
                             </do_for_each>
-                        </do_for_each>
+                        </do_if>
+
                         <return value="$Routes"/>
                     </actions>
                 </library>
@@ -151,13 +165,17 @@
                     </params>
                     <actions>
                         <create_list name="$Routes"/>
-                        <do_for_each name="$BuyerSector" in="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector">
-                            <do_for_each name="$ContractedWare" in="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector">
-                                <do_if value="$Ware == $ContractedWare">
-                                    <append_to_list name="$Routes" exact="GlobalTradeRouteTables.MasterTable.{ GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.$SupplierSector.$BuyerSector.$ContractedWare }" />
-                                </do_if>
+
+                        <do_if value="@md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{$SupplierSector}">
+                            <do_for_each name="$BuyerSector" in="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{$SupplierSector}">
+                                <do_for_each name="$ContractedWare" in="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{$SupplierSector}.{$BuyerSector}">
+                                    <do_if value="$Ware == $ContractedWare">
+                                        <append_to_list name="$Routes" exact="GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{$SupplierSector}.{$BuyerSector}.{$ContractedWare}" />
+                                    </do_if>
+                                </do_for_each>
                             </do_for_each>
-                        </do_for_each>
+                        </do_if>
+
                         <return value="$Routes"/>
                     </actions>
                 </library>
@@ -178,13 +196,14 @@
                         </run_actions>
 
                         <do_for_each name="$Route" in="$TradeRoutes">
+                            <set_value name="$TradeTable" exact="@md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable.{$Route}"/>
                             <do_if value="$ForeignOnly">
-                                <do_if value="$Route.{ '$SupplierSector' }.trueowner != $BuyerSector.trueowner">
-                                    <set_value name="$TotalContractedAmount" exact="$Route.{ '$ContractedAmount' }" operation="add"/>
+                                <do_if value="@$TradeTable.{ '$SupplierSector' }.trueowner != $BuyerSector.trueowner">
+                                    <set_value name="$TotalContractedAmount" exact="$TradeTable.{ '$ContractedAmount' }" operation="add"/>
                                 </do_if>
                             </do_if>
                             <do_else>
-                                <set_value name="$TotalContractedAmount" exact="$Route.{ '$ContractedAmount' }" operation="add"/>
+                                <set_value name="$TotalContractedAmount" exact="$TradeTable.{ '$ContractedAmount' }" operation="add"/>
                             </do_else>
                         </do_for_each>
 
@@ -208,13 +227,14 @@
                         </run_actions>
 
                         <do_for_each name="$Route" in="$TradeRoutes">
+                            <set_value name="$TradeTable" exact="@md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable.{$Route}"/>
                             <do_if value="$ForeignOnly">
-                                <do_if value="$Route.{ '$BuyerSector' }.trueowner != $SupplierSector.trueowner">
-                                    <set_value name="$TotalContractedAmount" exact="$Route.{ '$ContractedAmount' }" operation="add"/>
+                                <do_if value="@$TradeTable.{ '$BuyerSector' }.trueowner != $SupplierSector.trueowner">
+                                    <set_value name="$TotalContractedAmount" exact="$TradeTable.{ '$ContractedAmount' }" operation="add"/>
                                 </do_if>
                             </do_if>
                             <do_else>
-                                <set_value name="$TotalContractedAmount" exact="$Route.{ '$ContractedAmount' }" operation="add"/>
+                                <set_value name="$TotalContractedAmount" exact="$TradeTable.{ '$ContractedAmount' }" operation="add"/>
                             </do_else>
                         </do_for_each>
 
@@ -234,12 +254,58 @@
 
                 <!-- make a csv file of trade routes -->
                 <library name="DumpMasterTableToLog" purpose="run_actions">
+                    <params>
+                        <param name="directory" />
+                        <param name="name" />
+                    </params>
                     <actions>
 
-                        <debug_to_file directory="FactionTradeRoutes" name="'TradeRoutesDump%s.csv'.[player.age]" text="'%1, %2, %3, %4, %5, %6, %7\n'.['UUID', 'BuyerSector', 'SupplierSector', 'ContractedWare', 'ContractedAmount', 'WareMovedFromBToA', 'AmountMovedFromBToA']" />
+                        <debug_to_file directory="$directory" name="$name" text="'%1, %2, %3, %4, %5'.['UUID', 'BuyerSector', 'SupplierSector', 'ContractedWare', 'ContractedAmount']" />
 
-                        <do_for_each name="$UUID" in="$GlobalTradeRouteTables.MasterTable.keys.list">
-                            <debug_to_file directory="FactionTradeRoutes" name="'TradeRoutesDump%s.csv'.[player.age]" text="'%1, %2, %3, %4, %5, %6, %7\n'.[$UUID, $GlobalTradeRouteTables.MasterTable.$UUID.{ '$BuyerSector' }.knownname, $GlobalTradeRouteTables.MasterTable.$UUID.{ '$SupplierSector' }.knownname, $GlobalTradeRouteTables.MasterTable.$UUID.{ '$ContractedWare' }.name, $GlobalTradeRouteTables.MasterTable.$UUID.{ '$ContractedAmount' }, $GlobalTradeRouteTables.MasterTable.$UUID.{ '$WareMovedFromBToA' }.name, $GlobalTradeRouteTables.MasterTable.$UUID.{ '$AmountMovedFromBToA' }]" />
+                        <do_for_each name="$UUID" in="md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable.keys.list">
+                            <debug_to_file directory="$directory" name="$name" text="'%1, %2, %3, %4, %5'.[$UUID, md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable.{ $UUID }.{ '$BuyerSector' }.knownname, md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable.{ $UUID }.{ '$SupplierSector' }.knownname, md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable.{ $UUID }.{ '$ContractedWare' }.name, md.LIB_trade_routes.GlobalTradeRouteTables.$MasterTable.{ $UUID }.{ '$ContractedAmount' }]" />
+                        </do_for_each>
+
+                    </actions>
+                </library>
+
+                <!-- make a csv file of trade routes -->
+                <library name="DumpTradeRouteLookupTableByBuyerSectorToLog" purpose="run_actions">
+                    <params>
+                        <param name="directory" />
+                        <param name="name" />
+                    </params>
+                    <actions>
+
+                        <debug_to_file directory="$directory" name="$name" text="'%1, %2, %3, %4'.['BuyerSector', 'SupplierSector', 'ContractedWare', 'UUID']" />
+
+                        <do_for_each name="$Buyer" in="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.keys.list">
+                            <do_for_each name="$Supplier" in="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{$Buyer}.keys.list">
+                                <do_for_each name="$Ware" in="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{$Buyer}.{$Supplier}.keys.list">
+                                    <debug_to_file directory="$directory" name="$name" text="'%1, %2, %3, %4'.[$Buyer.knownname, $Supplier.knownname, $Ware.name, md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableByBuyerSector.{$Buyer}.{$Supplier}.{$Ware}]" />
+                                </do_for_each>
+                            </do_for_each>
+                        </do_for_each>
+
+                    </actions>
+                </library>
+
+                <!-- make a csv file of trade routes -->
+                <library name="DumpTradeRouteLookupTableBySupplierSectorToLog" purpose="run_actions">
+                    <params>
+                        <param name="directory" />
+                        <param name="name" />
+                    </params>
+                    <actions>
+
+                        <debug_to_file directory="$directory" name="$name" text="'%1, %2, %3, %4'.['SupplierSector', 'BuyerSector', 'ContractedWare', 'UUID']" />
+
+                        <do_for_each name="$Supplier" in="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.keys.list">
+                            <do_for_each name="$Buyer" in="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{$Supplier}.keys.list">
+                                <do_for_each name="$Ware" in="md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{$Supplier}.{$Buyer}.keys.list">
+                                    <debug_to_file directory="$directory" name="$name" text="'%1, %2, %3, %4'.[$Supplier.knownname, $Buyer.knownname, $Ware.name, md.LIB_trade_routes.GlobalTradeRouteTables.$TradeRouteLookupTableBySupplierSector.{$Supplier}.{$Buyer}.{$Ware}]" />
+                                </do_for_each>
+                            </do_for_each>
                         </do_for_each>
 
                     </actions>

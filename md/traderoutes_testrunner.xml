@@ -6,24 +6,45 @@
                 <event_cue_signalled cue="md.Setup.Start" />
             </conditions>
             <actions>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_AddsRouteToMasterTable"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_SetsBuyerSectorInMasterTable"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_SetsSupplierSectorInMasterTable"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_SetsContractedWareInMasterTable"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_SetcContractedAmountInMasterTable"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_AddsToTradeRouteLookupTableByBuyerSector"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_SetsUUIDInTradeRouteLookupTableByBuyerSector"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_AddsToTradeRouteLookupTableBySupplierSector"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToEmptyTable_SetsUUIDInTradeRouteLookupTableBySupplierSector"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_AddsRouteToMasterTable"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsBuyerSectorInMasterTable"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsSupplierSectorInMasterTable"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsContractedWareInMasterTable"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsContractedAmountInMasterTable"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_AddsToTradeRouteLookupTableByBuyerSector"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsUUIDInTradeRouteLookupTableByBuyerSector"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_AddsToTradeRouteLookupTableBySupplierSector"/>
-                <run_actions ref="md.LIB_trade_routes_tests.AddRoute_WhenRouteIsAddedToNonEmptyTable_SetsUUIDInTradeRouteLookupTableBySupplierSector"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test1"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test2"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test3"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test4"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test6"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test7"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test8"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test9"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test10"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test11"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test12"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test13"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test14"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test15"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test16"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test17"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test18"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test19"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test20"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test21"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test22"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test23"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test24"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test25"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test26"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test27"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test28"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test29"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test30"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test31"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test32"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test33"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test33"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test34"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test35"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test36"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test37"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test38"/>
+                <run_actions ref="md.LIB_trade_routes_tests.Test39"/>
             </actions>
         </cue>
     </cues>
